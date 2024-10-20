@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Calendar with User Input</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .calendar {
+            width: 400px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-header h3 {
+            margin: 0;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+        }
+
+        .calendar-day {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+
+        .calendar-day:hover {
+            background-color: #d0eaff;
+        }
+
+        .event-list {
+            margin-top: 20px;
+        }
+
+        .event {
+            padding: 10px;
+            background-color: #e0f7e7;
+            border-left: 5px solid #29b87d;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+
+        .event-form {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .event-form input {
+            padding: 5px;
+            font-size: 16px;
+        }
+
+        .event-form button {
+            padding: 10px;
+            background-color: #29b87d;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .event-form button:hover {
+            background-color: #218e68;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="calendar">
+        <div class="calendar-header">
+            <button onclick="prevMonth()">Prev</button>
+            <h3 id="monthYear"></h3>
+            <button onclick="nextMonth()">Next</button>
+        </div>
+
+        <div class="calendar-grid" id="calendarDays">
+            <!-- Days will be generated here -->
+        </div>
+
+        <div class="event-list">
+            <h4>Events:</h4>
+            <div id="events"></div>
+        </div>
+
+        <div class="event-form">
+            <input type="text" id="eventInput" placeholder="Enter event" />
+            <button onclick="addEvent()">Add Event</button>
+        </div>
+    </div>
+
+    <script>
+        let currentMonth = new Date().getMonth();
+        let currentYear = new Date().getFullYear();
+        let selectedDate = "";
+
+        // Load events from localStorage or initialize an empty object
+        const events = JSON.parse(localStorage.getItem("events")) || {};
+
+        function loadCalendar(month, year) {
+            const daysContainer = document.getElementById("calendarDays");
+            const monthYearDisplay = document.getElementById("monthYear");
+            daysContainer.innerHTML = ""; // Clear previous days
+            monthYearDisplay.innerHTML = `${new Date(year, month).toLocaleString('default', { month: 'long' })} ${year}`;
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            // Add blank days for alignment
+            for (let i = 0; i < firstDay; i++) {
+                daysContainer.innerHTML += `<div class="calendar-day"></div>`;
+            }
+
+            // Add actual days
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                daysContainer.innerHTML += `<div class="calendar-day" onclick="selectDate('${dateStr}')">${day}</div>`;
+            }
+        }
+
+        function selectDate(date) {
+            selectedDate = date;
+            showEvents(date);
+        }
+
+        function showEvents(date) {
+            const eventsContainer = document.getElementById("events");
+            eventsContainer.innerHTML = ""; // Clear previous events
+            if (events[date]) {
+                events[date].forEach(event => {
+                    eventsContainer.innerHTML += `<div class="event">${event}</div>`;
+                });
+            } else {
+                eventsContainer.innerHTML = "<p>No events for this day.</p>";
+            }
+        }
+
+        function addEvent() {
+            const eventInput = document.getElementById("eventInput").value;
+            if (!eventInput || !selectedDate) {
+                alert("Please select a date and enter an event.");
+                return;
+            }
+
+            // Add event to the selected date
+            if (!events[selectedDate]) {
+                events[selectedDate] = [];
+            }
+            events[selectedDate].push(eventInput);
+
+            // Save updated events to localStorage
+            localStorage.setItem("events", JSON.stringify(events));
+
+            // Clear input field
+            document.getElementById("eventInput").value = "";
+
+            // Refresh event list for the selected date
+            showEvents(selectedDate);
+        }
+
+        function prevMonth() {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            loadCalendar(currentMonth, currentYear);
+        }
+
+        function nextMonth() {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            loadCalendar(currentMonth, currentYear);
+        }
+
+        // Initialize calendar with the current month
+        loadCalendar(currentMonth, currentYear);
+    </script>
+
+</body>
+
+</html>
